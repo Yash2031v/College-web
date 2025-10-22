@@ -14,7 +14,7 @@
             <label for="Email">Email:</label>
             <input type="email" name="Email" required><br><br>
             <label for="Phone">Phone:</label>
-            <input type="number" name="Phone" required><br><br>
+            <input type="tel" name="Phone" maxlength="10"required><br><br>
             <label for="indate">Check-In Date:</label>
             <input type="date" name="indate" required><br><br>
             <label for="outdate">Check-Out Date:</label>
@@ -32,7 +32,7 @@
 
             </Select><br><br>
             <label for="guest">Number Of Guests:</label>
-            <input type="number" name="guest" required><br><br>
+            <input type="number" name="guest" min="1" required><br><br>
             <label for="Request">Special Requests:</label><br>
             <textarea id="request" name="Request" rows="5" cols="40"></textarea><br><br>
             <input type="Submit" Value="Book Now">
