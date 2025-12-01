@@ -6,3 +6,11 @@ body {
   font-family: Arial, sans-serif;
   margin: 20px;
 }
+.block-menu a {
+  display: block;
+  background-color: #3498db;
+  color: white;
+  padding: 10px;
+  margin: 5px 0;
+  text-decoration: none;
+}
