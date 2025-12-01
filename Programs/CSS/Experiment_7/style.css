@@ -22,3 +22,13 @@ body {
   margin: 5px;
   text-decoration: none;
 }
+.inline-block-menu a {
+  display: inline-block;
+  background-color: #9b59b6;
+  color: white;
+  height: 50px;
+  width: 120px;
+  padding: 10px 15px;
+  margin: 5px;
+  text-decoration: none;
+}
