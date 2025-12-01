@@ -1,14 +1,30 @@
 body {
-  font-family: 'Georgia', serif;
-  margin: 20px;
+    font-family: 'Georgia', serif;
+    margin: 20px;
 }
+
 .container {
-  border: 2px solid black;
-  display: flex;
-  justify-content: center;     /* Centers the cards horizontally */
-  align-items: center;         /* Aligns them vertically (if height given) */
-  flex-direction: row;         /* Aligns cards in a row */
-  gap: 40px;                   /* Space between cards */
-  padding: 40px;
-  margin: 20px;
+    border: 2px solid black;
+    display: flex;
+    justify-content: center;
+    /* Centers the cards horizontally */
+    align-items: center;
+    /* Aligns them vertically (if height given) */
+    flex-direction: row;
+    /* Aligns cards in a row */
+    gap: 40px;
+    /* Space between cards */
+    padding: 40px;
+    margin: 20px;
+}
+
+.card {
+    background-color: white;
+    width: 220px;
+    text-align: center;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    border: 2px solid #007bff;
+
 }
