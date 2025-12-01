@@ -2,3 +2,13 @@ body {
   font-family: 'Georgia', serif;
   margin: 20px;
 }
+.container {
+  border: 2px solid black;
+  display: flex;
+  justify-content: center;     /* Centers the cards horizontally */
+  align-items: center;         /* Aligns them vertically (if height given) */
+  flex-direction: row;         /* Aligns cards in a row */
+  gap: 40px;                   /* Space between cards */
+  padding: 40px;
+  margin: 20px;
+}
