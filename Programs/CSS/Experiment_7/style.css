@@ -14,3 +14,11 @@ body {
   margin: 5px 0;
   text-decoration: none;
 }
+.inline-menu a {
+  display: inline;
+  background-color: #24f544;
+  color: white;
+  padding: 5px;
+  margin: 5px;
+  text-decoration: none;
+}
