@@ -24,3 +24,8 @@
     line-height: 60px;
     margin: 5px;
 }
+.seperator {
+    height: 2px;
+    width: 100%;
+    background-color: black;
+}
