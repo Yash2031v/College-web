@@ -6,7 +6,10 @@
  height: 300px;
 }
 .box {
-    width: 100px;
-    height: 100px;
-    background: tomato;
+  width: 80px;
+  height: 40px;
+  background: tomato;
+  text-align: center;
+  line-height: 40px;
+  font-size: 20px;
 }
