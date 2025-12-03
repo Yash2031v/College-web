@@ -1,0 +1,12 @@
+.container {
+ display: flex;
+ flex-direction: column;
+ justify-content: space-around;
+ align-items: center;
+ height: 300px;
+}
+.box {
+    width: 100px;
+    height: 100px;
+    background: tomato;
+}
