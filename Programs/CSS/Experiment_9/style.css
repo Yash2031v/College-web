@@ -41,3 +41,33 @@ h1 {
     margin-bottom: 12px;
 }
 
+/* TEXT */
+.product-card h3 {
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.product-card p {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+/* PRICE + BUTTON */
+.price {
+    font-size: 18px;
+    font-weight: bold;
+    color: #0a9b2b;
+    margin-bottom: 12px;
+}
+
+.btn {
+    display: inline-block;
+    background: #007bff;
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+}
+
