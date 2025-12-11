@@ -39,3 +39,26 @@
      font-weight: bold;
 }  
 
+/* Responsive Design */
+/*for mobile */
+@media (max-width:768px){
+     .nav-links{
+          display: none;
+     }
+     
+     .actions a{
+          font-size: 0.9rem;
+     }
+}
+/*for tablets */
+@media (min-width:769px) and (max-width:1024px){
+     .nav-links a{
+          font-size: 0.9rem;
+     }
+}
+/*for desktops*/
+@media (min-width:1025px){   
+     .nav-link a{
+          font-size: 1rem;
+     }
+}
