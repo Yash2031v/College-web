@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gesticulate - Light Version</title>
+    <style>
+        :root {
+            --primary: #00f2ff;
+            --glass: rgba(20, 20, 30, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text);
+            user-select: none;
+        }
+
+        /* Canvas & Video Layers */
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        #video-feed {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 160px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid var(--glass-border);
+            z-index: 10;
+            transform: scaleX(-1); /* Mirror effect */
+            background: #000;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        #video-feed:hover {
+            opacity: 1;
+        }
+
+        /* UI Overlay */
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 300px;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: none; /* Let clicks pass through gaps */
+        }
+
+        .panel {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            pointer-events: auto;
+            transition: transform 0.2s;
+        }
+
+        .panel:hover {
+            transform: translateY(-2px);
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin: 0 0 5px 0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.sub {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin: 0 0 15px 0;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            color: #ddd;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #444;
+            border-radius: 2px;
+            appearance: none;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Shape Grid */
+        .shape-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .shape-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid transparent;
+            color: #eee;
+            padding: 8px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .shape-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .shape-btn.active {
+            background: rgba(0, 242, 255, 0.2);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Toggles & Buttons */
+        .row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toggle-btn.active {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+        }
+
+        .indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4444;
+        }
+        .indicator.on { background: #00ff88; }
+
+        /* Loading Overlay */
+        #loader {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid #333;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        #status-text { margin-top: 15px; font-size: 0.9rem; color: #888; }
+    </style>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <div id="status-text">Initializing Engine...</div>
+    </div>
+
+    <div id="ui-layer">
+        <div class="panel">
+            <h1>Particle Gestures</h1>
+            <p class="sub">Show hands to control. Fist to compress, Open to expand.</p>
+
+            <div class="control-group">
+                <label>Shape</label>
+                <div class="shape-grid">
+                    <button class="shape-btn active" onclick="setShape('sphere')">Sphere</button>
+                    <button class="shape-btn" onclick="setShape('heart')">Heart</button>
+                    <button class="shape-btn" onclick="setShape('flower')">Flower</button>
+                    <button class="shape-btn" onclick="setShape('saturn')">Saturn</button>
+                    <button class="shape-btn" onclick="setShape('buddha')">Buddha</button>
+                    <button class="shape-btn" onclick="setShape('fireworks')">Fireworks</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Color Hue <span id="hue-val"></span></label>
+                <input type="range" min="0" max="1" step="0.01" value="0.5" id="hue-slider">
+            </div>
+
+            <div class="control-group">
+                <label>Particle Count</label>
+                <input type="range" min="1000" max="20000" step="500" value="4000" id="count-slider">
+            </div>
+
+            <div class="control-group">
+                <label>Chaos / Noise</label>
+                <input type="range" min="0" max="1" step="0.01" value="0.2" id="noise-slider">
+            </div>
+
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+
+            <div class="row">
+                <button class="toggle-btn active" id="cam-toggle">
+                    <div class="indicator on" id="cam-indicator"></div> Camera
+                </button>
+                <button class="toggle-btn" onclick="takeScreenshot()">
+                    📷 Snap
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <video id="video-feed" playsinline></video>
+
+    <div id="canvas-container"></div>
+
+<script>
+/**
+ * APP STATE & CONFIGURATION
+ */
+const state = {
+    // MODIFIED: Lower default particle count
+    particleCount: 4000,
+    currentShape: 'sphere',
+    hue: 0.5,
+    noiseStrength: 0.2,
+    cameraEnabled: true,
+    
+    // Gesture States (0 to 1)
+    gestureScale: 1.0,  
+    gestureOpenness: 1.0, 
+    handCenter: new THREE.Vector3(0, 0, 0),
+    isInteracting: false,
+    fireworkTriggered: false
+};
+
+const dom = {
+    loader: document.getElementById('loader'),
+    status: document.getElementById('status-text'),
+    video: document.getElementById('video-feed'),
+    hue: document.getElementById('hue-slider'),
+    noise: document.getElementById('noise-slider'),
+    count: document.getElementById('count-slider'),
+    camToggle: document.getElementById('cam-toggle'),
+    camIndicator: document.getElementById('cam-indicator')
+};
+
+/**
+ * THREE.JS SETUP
+ */
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.z = 30;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+// Particle System Variables
+let geometry, material, points;
+let targetPositions = []; 
+let velocities = [];      
+
+/**
+ * SHAPE GENERATORS
+ */
+const shapes = {
+    sphere: (i, count) => {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos((Math.random() * 2) - 1);
+        const r = 10 + Math.random() * 0.5;
+        return {
+            x: r * Math.sin(phi) * Math.cos(theta),
+            y: r * Math.sin(phi) * Math.sin(theta),
+            z: r * Math.cos(phi)
+        };
+    },
+    heart: (i, count) => {
+        const t = Math.random() * Math.PI * 2;
+        const u = Math.random() * Math.PI;
+        const x = 16 * Math.pow(Math.sin(t), 3);
+        const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+        const z = u * 4 - 6; 
+        const z_rand = (Math.random() - 0.5) * 5; 
+        return { x: x * 0.5, y: y * 0.5, z: z_rand };
+    },
+    flower: (i, count) => {
+        const r_base = 10;
+        const u = Math.random() * Math.PI * 2;
+        const v = Math.random() * Math.PI;
+        const k = 4; // petals
+        const r = r_base * (1 + 0.3 * Math.cos(k * u) * Math.sin(v));
+        return {
+            x: r * Math.sin(v) * Math.cos(u),
+            y: r * Math.sin(v) * Math.sin(u),
+            z: r * Math.cos(v) * 0.5
+        };
+    },
+    saturn: (i, count) => {
+        const isRing = Math.random() > 0.6;
+        if (isRing) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 12 + Math.random() * 6;
+            return { x: Math.cos(angle)*dist, y: Math.sin(angle)*dist * 0.2, z: Math.sin(angle)*dist };
+        } else {
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos((Math.random() * 2) - 1);
+            const r = 6;
+            return {
+                x: r * Math.sin(phi) * Math.cos(theta),
+                y: r * Math.sin(phi) * Math.sin(theta),
+                z: r * Math.cos(phi)
+            };
+        }
+    },
+    buddha: (i, count) => {
+        const r = Math.random();
+        let p = {x:0, y:0, z:0};
+        
+        if (r < 0.2) { // Head
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos((Math.random() * 2) - 1);
+            const rad = 2.5;
+            p.x = rad * Math.sin(phi) * Math.cos(theta);
+            p.y = rad * Math.sin(phi) * Math.sin(theta) + 4;
+            p.z = rad * Math.cos(phi);
+        } else if (r < 0.6) { // Body
+             const theta = Math.random() * Math.PI * 2;
+             const h = (Math.random() - 0.5) * 6;
+             const w = 3.5 - Math.abs(h)*0.3;
+             p.x = w * Math.cos(theta);
+             p.y = h;
+             p.z = w * Math.sin(theta) * 0.8;
+        } else { // Legs
+            const u = Math.random() * Math.PI * 2; 
+            const v = Math.random() * Math.PI; 
+            const R = 4; const tube = 2.5;
+            p.x = (R + tube * Math.cos(v)) * Math.cos(u);
+            p.y = tube * Math.sin(v) - 3.5;
+            p.z = (R + tube * Math.cos(v)) * Math.sin(u);
+        }
+        return p;
+    },
+    fireworks: (i, count) => {
+        return { x: 0, y: 0, z: 0 };
+    }
+};
+
+/**
+ * INIT PARTICLE SYSTEM
+ */
+function initParticles() {
+    if (points) {
+        scene.remove(points);
+        geometry.dispose();
+        material.dispose();
+    }
+
+    const count = state.particleCount;
+    geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    targetPositions = new Float32Array(count * 3);
+    velocities = new Float32Array(count * 3); 
+
+    const color = new THREE.Color();
+    color.setHSL(state.hue, 0.8, 0.6);
+
+    for (let i = 0; i < count; i++) {
+        // Initial pos
+        const v = shapes.sphere(i, count);
+        positions[i*3] = v.x;
+        positions[i*3+1] = v.y;
+        positions[i*3+2] = v.z;
+        
+        targetPositions[i*3] = v.x;
+        targetPositions[i*3+1] = v.y;
+        targetPositions[i*3+2] = v.z;
+
+        // Color variation
+        const cVar = (Math.random() - 0.5) * 0.2;
+        color.setHSL(state.hue + cVar, 0.8, 0.6);
+        colors[i*3] = color.r;
+        colors[i*3+1] = color.g;
+        colors[i*3+2] = color.b;
+
+        velocities[i*3] = 0;
+        velocities[i*3+1] = 0;
+        velocities[i*3+2] = 0;
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    // Simple Shader for glow
+    const vertexShader = `
+        attribute vec3 color;
+        varying vec3 vColor;
+        uniform float uSize;
+        uniform float uScale;
+        void main() {
+            vColor = color;
+            vec4 mvPosition = modelViewMatrix * vec4(position * uScale, 1.0);
+            gl_PointSize = uSize * (300.0 / -mvPosition.z);
+            gl_Position = projectionMatrix * mvPosition;
+        }
+    `;
+
+    const fragmentShader = `
+        varying vec3 vColor;
+        void main() {
+            float r = distance(gl_PointCoord, vec2(0.5, 0.5));
+            if (r > 0.5) discard;
+            float glow = 1.0 - (r * 2.0);
+            glow = pow(glow, 1.5);
+            gl_FragColor = vec4(vColor, glow);
+        }
+    `;
+
+    material = new THREE.ShaderMaterial({
+        uniforms: {
+            uSize: { value: 3.5 }, // Slightly larger dots since there are fewer
+            uScale: { value: 1.0 }
+        },
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+    });
+
+    points = new THREE.Points(geometry, material);
+    scene.add(points);
+    
+    regenerateTargets();
+}
+
+function regenerateTargets() {
+    const count = state.particleCount;
+    const shapeFn = shapes[state.currentShape];
+    for(let i=0; i<count; i++) {
+        const v = shapeFn(i, count);
+        targetPositions[i*3] = v.x;
+        targetPositions[i*3+1] = v.y;
+        targetPositions[i*3+2] = v.z;
+        
+        if(state.currentShape === 'fireworks') {
+             const theta = Math.random() * Math.PI * 2;
+             const phi = Math.acos((Math.random() * 2) - 1);
+             const speed = 0.2 + Math.random() * 0.8;
+             velocities[i*3] = Math.sin(phi)*Math.cos(theta) * speed;
+             velocities[i*3+1] = Math.sin(phi)*Math.sin(theta) * speed;
+             velocities[i*3+2] = Math.cos(phi) * speed;
+        }
+    }
+}
+
+function setShape(name) {
+    state.currentShape = name;
+    document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    if (name === 'fireworks') state.fireworkTriggered = false; 
+    regenerateTargets();
+}
+
+/**
+ * ANIMATION LOOP
+ */
+function animate() {
+    requestAnimationFrame(animate);
+
+    const positions = geometry.attributes.position.array;
+    const count = state.particleCount;
+    const damping = 0.95;
+    let attractionStrength = 0.03 * state.gestureOpenness; 
+    
+    if (state.currentShape === 'fireworks') {
+        if (!state.fireworkTriggered && state.gestureOpenness > 0.8) {
+            state.fireworkTriggered = true;
+        }
+        attractionStrength = !state.fireworkTriggered ? 0.2 : 0;
+    } else {
+        if (state.gestureOpenness < 0.3) {
+            for(let i=0; i<count; i++) {
+                const ix = i*3;
+                // Move towards center faster when fist is closed
+                velocities[ix] -= positions[ix] * 0.01;
+                velocities[ix+1] -= positions[ix+1] * 0.01;
+                velocities[ix+2] -= positions[ix+2] * 0.01;
+            }
+        }
+    }
+
+    const noiseAmt = state.noiseStrength * 0.05 * state.gestureOpenness;
+
+    for (let i = 0; i < count; i++) {
+        const ix = i * 3;
+        const iy = ix + 1;
+        const iz = ix + 2;
+
+        if (state.currentShape !== 'fireworks' || !state.fireworkTriggered) {
+            const tx = targetPositions[ix];
+            const ty = targetPositions[iy];
+            const tz = targetPositions[iz];
+
+            velocities[ix] += (tx - positions[ix]) * attractionStrength;
+            velocities[iy] += (ty - positions[iy]) * attractionStrength;
+            velocities[iz] += (tz - positions[iz]) * attractionStrength;
+        }
+
+        if (state.gestureOpenness > 0.5) {
+            velocities[ix] += (Math.random() - 0.5) * noiseAmt;
+            velocities[iy] += (Math.random() - 0.5) * noiseAmt;
+            velocities[iz] += (Math.random() - 0.5) * noiseAmt;
+        }
+
+        velocities[ix] *= damping;
+        velocities[iy] *= damping;
+        velocities[iz] *= damping;
+
+        positions[ix] += velocities[ix];
+        positions[iy] += velocities[iy];
+        positions[iz] += velocities[iz];
+    }
+
+    if (!state.isInteracting) {
+        points.rotation.y += 0.002;
+    } else {
+        const targetRotX = -state.handCenter.y * 0.5;
+        const targetRotY = state.handCenter.x * 0.5;
+        points.rotation.x += (targetRotX - points.rotation.x) * 0.1;
+        points.rotation.y += (targetRotY - points.rotation.y) * 0.1;
+    }
+
+    const targetScale = 0.5 + (state.gestureScale * 1.5);
+    material.uniforms.uScale.value += (targetScale - material.uniforms.uScale.value) * 0.1;
+
+    geometry.attributes.position.needsUpdate = true;
+    renderer.render(scene, camera);
+}
+
+/**
+ * COMPUTER VISION (MEDIAPIPE)
+ */
+const hands = new Hands({locateFile: (file) => {
+    return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+}});
+
+hands.setOptions({
+    maxNumHands: 2,
+    modelComplexity: 0, // LOWER COMPLEXITY FOR SPEED
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
+});
+
+hands.onResults(onResults);
+
+const cameraUtils = new Camera(dom.video, {
+    onFrame: async () => {
+        if (state.cameraEnabled) await hands.send({image: dom.video});
+    },
+    width: 640,
+    height: 480
+});
+
+function onResults(results) {
+    dom.loader.style.opacity = '0';
+    setTimeout(() => dom.loader.style.display = 'none', 500);
+
+    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        state.isInteracting = true;
+        const landmarks = results.multiHandLandmarks[0]; 
+        
+        const wrist = landmarks[0];
+        let tipDistSum = 0;
+        const tips = [4, 8, 12, 16, 20];
+        tips.forEach(t => {
+            const dx = landmarks[t].x - wrist.x;
+            const dy = landmarks[t].y - wrist.y;
+            tipDistSum += Math.sqrt(dx*dx + dy*dy);
+        });
+        
+        let openness = Math.min(Math.max((tipDistSum - 0.2) / 1.0, 0), 1);
+        state.gestureOpenness += (openness - state.gestureOpenness) * 0.2;
+
+        state.handCenter.x = (wrist.x - 0.5) * 2; 
+        state.handCenter.y = -(wrist.y - 0.5) * 2; 
+
+        if (results.multiHandLandmarks.length === 2) {
+            const wrist2 = results.multiHandLandmarks[1][0];
+            const dist = Math.sqrt(
+                Math.pow(wrist.x - wrist2.x, 2) + 
+                Math.pow(wrist.y - wrist2.y, 2)
+            );
+            let scaleVal = Math.min(Math.max((dist - 0.1) * 1.5, 0), 1);
+            state.gestureScale += (scaleVal - state.gestureScale) * 0.1;
+        }
+
+    } else {
+        state.isInteracting = false;
+        state.gestureOpenness += (1.0 - state.gestureOpenness) * 0.05;
+        state.gestureScale += (0.5 - state.gestureScale) * 0.05;
+    }
+}
+
+cameraUtils.start().catch(err => {
+    console.warn("Camera failed", err);
+    dom.status.innerText = "Camera denied. Mouse interaction only.";
+    dom.camIndicator.classList.remove('on');
+    state.cameraEnabled = false;
+    setTimeout(() => {
+        dom.loader.style.opacity = '0';
+        setTimeout(() => dom.loader.style.display = 'none', 500);
+    }, 1000);
+});
+
+// UI Event Listeners
+dom.camToggle.addEventListener('click', () => {
+    state.cameraEnabled = !state.cameraEnabled;
+    if(state.cameraEnabled) {
+        dom.video.play();
+        dom.camIndicator.classList.add('on');
+    } else {
+        dom.video.pause();
+        dom.camIndicator.classList.remove('on');
+        state.gestureOpenness = 1;
+    }
+});
+
+dom.hue.addEventListener('input', (e) => {
+    state.hue = parseFloat(e.target.value);
+    document.getElementById('hue-val').innerText = state.hue.toFixed(2);
+    const colors = geometry.attributes.color.array;
+    const c = new THREE.Color();
+    for(let i=0; i<state.particleCount; i++) {
+         const cVar = (Math.random() - 0.5) * 0.2;
+         c.setHSL(state.hue + cVar, 0.8, 0.6);
+         colors[i*3] = c.r;
+         colors[i*3+1] = c.g;
+         colors[i*3+2] = c.b;
+    }
+    geometry.attributes.color.needsUpdate = true;
+});
+
+dom.count.addEventListener('change', (e) => {
+    state.particleCount = parseInt(e.target.value);
+    initParticles();
+});
+
+dom.noise.addEventListener('input', (e) => {
+    state.noiseStrength = parseFloat(e.target.value);
+});
+
+window.addEventListener('mousemove', (e) => {
+    if (state.cameraEnabled && state.isInteracting) return;
+    const x = (e.clientX / window.innerWidth) * 2 - 1;
+    const y = -(e.clientY / window.innerHeight) * 2 + 1;
+    state.handCenter.x = x;
+    state.handCenter.y = y;
+});
+
+window.addEventListener('mousedown', () => { if (!state.cameraEnabled) state.gestureOpenness = 0.1; });
+window.addEventListener('mouseup', () => { if (!state.cameraEnabled) state.gestureOpenness = 1.0; });
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    material.uniforms.uSize.value = (window.innerHeight / 1000) * 3.5;
+});
+
+function takeScreenshot() {
+    renderer.render(scene, camera);
+    const dataURL = renderer.domElement.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.download = 'gesticulate-capture.png';
+    link.href = dataURL;
+    link.click();
+}
+
+// Initial Kickoff
+initParticles();
+animate();
+
+</script>
+</body>
+</html>
