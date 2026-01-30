@@ -1,0 +1,116 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family: system-ui, sans-serif;
+}
+
+body{
+    background:#eef1f6;
+    color:#1f2933;
+}
+
+/* HEADER */
+header{
+    background:white;
+    text-align:left;
+    padding:50px 80px;
+    border-bottom:5px solid #2563eb;
+}
+
+header h1{
+    font-size:38px;
+}
+
+/* NAV */
+nav{
+    background:#2563eb;
+    padding:14px 40px;
+    display:flex;
+    justify-content:center;
+    gap:25px;
+}
+
+nav a{
+    color:white;
+    text-decoration:none;
+    font-weight:600;
+    padding:8px 14px;
+    border-radius:4px;
+}
+
+nav a:hover{
+    background:rgba(255,255,255,.2);
+}
+
+/* SECTIONS */
+.section{
+    max-width:1100px;
+    margin:60px auto;
+    background:white;
+    padding:50px;
+    border-radius:18px;
+    text-align:left;
+    box-shadow:0 15px 40px rgba(0,0,0,.08);
+}
+
+.section h2{
+    border-left:6px solid #2563eb;
+    padding-left:14px;
+    margin-bottom:18px;
+    font-size:26px;
+}
+
+/* CARDS */
+.card-container{
+    justify-content:space-between;
+}
+
+.card{
+    border:1px solid #e5e7eb;
+    background:#fafafa;
+    border-radius:14px;
+}
+
+/* LIST */
+.list li{
+    width:100%;
+    background:#f9fafb;
+    border-left:6px solid #2563eb;
+}
+
+/* TABLE */
+.table-container{
+    margin-top:20px;
+}
+
+.timetable{
+    border-radius:14px;
+    overflow:hidden;
+}
+
+.timetable th{
+    background:#2563eb;
+}
+
+.timetable td{
+    background:white;
+}
+
+/* COLORS */
+.blue{background:#e0ecff;}
+.green{background:#e6f7ed;}
+.yellow{background:#fff9db;}
+.orange{background:#ffefe0;}
+
+.lunch{
+    background:#f3f4f6;
+}
+
+/* FOOTER */
+footer{
+    background:white;
+    border-top:4px solid #2563eb;
+    color:#1f2933;
+    padding:20px;
+}
